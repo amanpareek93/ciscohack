@@ -283,7 +283,7 @@ xapi.on('ready', () => {
                         co2: co2,
                     })
                     .then((res) => {
-                        console.log(`statusCode: ${res.statusCode}`)
+                        //console.log(`statusCode: ${res.statusCode}`)
                         //console.log(res)
                     })
                     .catch((error) => {
