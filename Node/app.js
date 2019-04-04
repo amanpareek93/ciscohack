@@ -275,11 +275,12 @@ xapi.on('ready', () => {
                 console.log(`Updated count to: ${count.Current}`);
                 roomPeopleCount = count.Current;
 
-                axios.post("http://192.168.1.242:8092/devicedata", {
-                        type: "peoplecount",
-                        value: roomPeopleCount,
-                        "timestamp": Date.now(),
-                        co2: co2,
+                //axios.post("http://192.168.1.242:8092/devicedata", {
+                axios.post("http://localhost:8092/devicedata", {
+                    type: "peoplecount",
+                    value: roomPeopleCount,
+                    "timestamp": Date.now(),
+                    co2: co2,
                 })
                 .then((res) => {
                     console.log(`statusCode: ${res.statusCode}`)
