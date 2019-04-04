@@ -6,6 +6,8 @@ var express = require('express'),
   bodyParser = require('body-parser');
 
 
+
+
 // DDP connection to Evoko Home server
 
 const DDPClient = require("ddp");
@@ -133,6 +135,27 @@ app.use(bodyParser.json());
 
 app.listen(port);
 
+function extendMeeting(req, res) {
+    const updateEvent = {
+        _id: req.query.id,
+        startDate: req.query.startDate, //moment().format("YYYY-MM-DDTHH:mm:ssZ"),
+        endDate: req.query.endDate
+    };
+    console.log("extend meeting called");
+    console.log(updateEvent);
+    ddpclient.call('updateEvent', [ updateEvent ],
+    function (err, result) {
+        if (result) {
+            res.json( result );
+            console.log(result);
+        } else {
+            console.log(err);
+            res.json(err);
+        }
+    });
+
+}
+
 function bookMeeting(req, res) {
 //    console.log(req);
     console.log({
@@ -156,16 +179,21 @@ function bookMeeting(req, res) {
         }],
         function (err, result) {
             if (result) {
+                res.json({ bookinId: result.body.id, status: result.type } );
                 console.log(result);
             } else {
                 console.log(err);
+                res.json(err);
             }
         });
 
-    res.json({ start: req.query.start, body: "meeting booked" } );
+
 }
 
-function extendMeeting(req, res) {
+// ---------------- xAPI
+
+
+function extendMeetingDialog(req, res) {
     xapi.command("UserInterface Message TextInput Display", { Text: "Do you want to extend the meeting?" });
     res.json({ status: "Success" } );
 }
@@ -196,7 +224,10 @@ xapi.on('error', (err) => {
 });
 
 
+const axios = require('axios')
 
+
+var roomPeopleCount = 0;
 xapi.on('ready', () => {
     console.log("connexion successful");
 /*
@@ -220,6 +251,20 @@ xapi.on('ready', () => {
             console.log('Adding feedback listener to: RoomAnalytics PeopleCount');
             xapi.feedback.on('/Status/RoomAnalytics/PeopleCount', (count) => {
                 console.log(`Updated count to: ${count.Current}`);
+                roomPeopleCount = count.Current;
+
+                axios.post("http://localhost:8092/devicedata", {
+                        type: "peoplecount",
+                        value: "1",
+                        "timestamp": Date.now(),
+                })
+                .then((res) => {
+                    console.log(`statusCode: ${res.statusCode}`)
+                    console.log(res)
+                })
+                .catch((error) => {
+                  //console.error(error)
+                });
             });
 
         })
