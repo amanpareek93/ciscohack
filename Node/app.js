@@ -372,7 +372,7 @@ client.on('message', function (topic, message) {
     co2 = parseInt(message.toString());
     if (co2 > 1000) {
         console.log("High CO2!!!");
-        xapi.command("UserInterface Message Text Display", { Text: "CO2 level is high, consider opening a window. CO2 level: " + co2, Duration:10 });
+        xapi.command("UserInterface Message TextLine Display", { Text: "CO2 level is high, consider opening a window. CO2 level: " + co2, Duration:5, X:10, Y:200 });
     }
     console.log(message.toString());
     //client.end();
