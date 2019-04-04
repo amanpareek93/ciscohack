@@ -300,38 +300,111 @@ xapi.on('ready', () => {
         });
 });
 
-
-//xapi.command("UserInterface Message TextLine Display", { Text: "Do you want to extend the meeting?",  Duration:10, X:10, Y:10 });
-const off = xapi.event.on('UserInterface/Message/TextInput/Response', (event) => {
-  switch( event.FeedbackId) {
-  case 'meet_extend':
-    let extendTime = parseInt(event.Text);
-    extendTime = Math.min(extendTime, 10);
-    console.log('extend with ', extendTime);
-
-    const updateEvent = {
-        _id: lastID,
-        startDate: lastStartDate, //moment().format("YYYY-MM-DDTHH:mm:ssZ"),
-        endDate: moment(lastEndDate).add(extendTime, "minutes")
-    };
-    console.log("extend meeting called");
-    console.log(updateEvent);
-    ddpclient.call('updateEvent', [ updateEvent ],
+function extendMeeting(minutes) {
+  const updateEvent = {
+    _id: lastID,
+    startDate: lastStartDate, //moment().format("YYYY-MM-DDTHH:mm:ssZ"),
+    endDate: moment(lastEndDate).add(minutes, "minutes")
+  };
+  console.log("extend meeting called");
+  console.log(updateEvent);
+  ddpclient.call('updateEvent', [ updateEvent ],
     function (err, result) {
-        if (result) {
-            res.json( result );
-        } else {
-            console.log(err);
-        }
-    });
+      if (result) {
+        res.json( result );
+      } else {
+        console.log(err);
+      }
+  });
+  console.log('extend meeting ', minutes);
+}
 
-    break;
-  default:
-    // Ignore
+function closeDialoges(board, screen) {
+  screen.command('UserInterface Extensions Panel Close');
+  board.command('UserInterface Message Prompt Clear');
+}
+
+function handleMinuteChange(event, extendTime) {
+  if (event.Type == 'clicked') {
+    if (event.Value == 'increment') {
+      extendTime++;
+    } else if (extendTime > 0) {
+      extendTime--;
+    }
   }
-});
+  return extendTime;
+}
+
+function PresentExtender(board, screen) {
+  var extendTime = 15;
+
+  const big = board.event.on('UserInterface Message Prompt Response', (event) => {
+    switch (event.FeedbackId) {
+      case 'meet_extend':
+        switch (event.OptionId) {
+          case '1':
+            extendMeeting(15);
+            break;
+          case '2':
+            extendMeeting(30);
+            break;
+          case '3':
+            // release meeting
+            console.log('release meeting');
+            break;
+          case '4':
+            // cancel do nothing
+            break;
+        }
+        closeDialoges(board, screen);
+        break;
+      default:
+      // Ignore
+    }
+  });
+  board.command('Standby Deactivate');
+  board.command("UserInterface Message Prompt Display",
+    {
+      Title: 'Meeting will end in 5 minutes',
+      Text: "Extend meeting?",
+      Duration: 60,
+      FeedbackId: 'meet_extend',
+      'Option.1': '+15 minutes',
+      'Option.2': '+30 minutes',
+      'Option.3': 'Release meeting',
+      'option.4': 'Cancel',
+    }
+  );
 
 
+  const small = screen.event.on('UserInterface Extensions Widget Action', (event) => {
+    switch (event.WidgetId) {
+      case 'minute_set':
+        extendTime = handleMinuteChange(event, extendTime);
+        screen.command('UserInterface Extensions Widget SetValue',
+          { value: extendTime, widgetid: 'minute_set' });
+        break;
+      case 'extend':
+        if (event.Type === 'pressed') {
+          return;
+        }
+        if (event.Value === '2') {
+          extendMeeting(extendTime);
+        }
+        closeDialoges(board, screen);
+        break;
+
+    }
+  });
+  screen.command('Standby Deactivate');
+  screen.command('UserInterface Extensions Panel Open',
+    { panelid: 'extender_1' });
+  screen.command('UserInterface Extensions Widget SetValue',
+    { value: extendTime, widgetid: 'minute_set' });
+  return { big, small };
+}
+
+PresentExtender(xapi, xapiSmall);
 
 /*
 // Fetch volume and print it
