@@ -116,12 +116,17 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 
-  app.route('/bookMeeting')
-    .get(bookMeeting)
-    .post(bookMeeting);
+    app.route('/bookMeeting')
+        .get(bookMeeting)
+        .post(bookMeeting);
 
-    app.route("/extendMeeting")
+    app.route("/extendMeeting") // extend Liso meeting
         .get(extendMeeting);
+
+    app.route("/extendMeetingDialog") // Bring up extension dialog.
+        .get(extendMeetingDialog);
+
+
 
     app.route("/clear")
     .get(clear);
@@ -156,7 +161,12 @@ function extendMeeting(req, res) {
 
 }
 
+var lastStartDate = null;
+var lastEndDate = null;
+var lastID = null;
 function bookMeeting(req, res) {
+    lastStartDate = req.query.startDate;
+    lastEndDate = req.query.endDate;
 //    console.log(req);
     console.log({
         roomId: "RbCBHzufM5WDR2D37",
@@ -179,8 +189,9 @@ function bookMeeting(req, res) {
         }],
         function (err, result) {
             if (result) {
-                res.json({ bookinId: result.body.id, status: result.type } );
+                res.json({ bookingId: result.body.id, status: result.type } );
                 console.log(result);
+                lastID = result.body.id;
             } else {
                 console.log(err);
                 res.json(err);
@@ -194,7 +205,18 @@ function bookMeeting(req, res) {
 
 
 function extendMeetingDialog(req, res) {
-    xapi.command("UserInterface Message TextInput Display", { Text: "Do you want to extend the meeting?" });
+    //xapi.command("UserInterface Message TextInput Display", { Text: "Do you want to extend the meeting?" });
+    xapi.command("UserInterface Message TextInput Display",
+    {
+        Title: 'Meeting will end in 5 minutes',
+        Text: "Do you want to extend the meeting (max 10 minutes)?",
+        InputType: 'Numeric',
+        PlaceHolder: 'Number of minutes',
+        Duration: 60,
+        FeedbackId: 'meet_extend',
+        SubmitText: 'Extend',
+    }
+    );
     res.json({ status: "Success" } );
 }
 
@@ -253,17 +275,18 @@ xapi.on('ready', () => {
                 console.log(`Updated count to: ${count.Current}`);
                 roomPeopleCount = count.Current;
 
-                axios.post("http://localhost:8092/devicedata", {
+                axios.post("http://192.168.1.242:8092/devicedata", {
                         type: "peoplecount",
-                        value: "1",
+                        value: roomPeopleCount,
                         "timestamp": Date.now(),
+                        co2: co2,
                 })
                 .then((res) => {
                     console.log(`statusCode: ${res.statusCode}`)
                     console.log(res)
                 })
                 .catch((error) => {
-                  //console.error(error)
+                  console.error(error)
                 });
             });
 
@@ -283,23 +306,30 @@ const off = xapi.event.on('UserInterface/Message/TextInput/Response', (event) =>
     let extendTime = parseInt(event.Text);
     extendTime = Math.min(extendTime, 10);
     console.log('extend with ', extendTime);
+
+    const updateEvent = {
+        _id: lastID,
+        startDate: lastStartDate, //moment().format("YYYY-MM-DDTHH:mm:ssZ"),
+        endDate: moment(lastEndDate).add(extendTime, "minutes")
+    };
+    console.log("extend meeting called");
+    console.log(updateEvent);
+    ddpclient.call('updateEvent', [ updateEvent ],
+    function (err, result) {
+        if (result) {
+            res.json( result );
+        } else {
+            console.log(err);
+        }
+    });
+
     break;
   default:
     // Ignore
-  }  
+  }
 });
 
-xapi.command("UserInterface Message TextInput Display", 
-  { 
-    Title: 'Meeting will end in 5 minutes',
-    Text: "Do you want to extend the meeting (max 10 minutes)?",
-    InputType: 'Numeric',
-    PlaceHolder: 'Number of minutes',
-    Duration: 60,
-    FeedbackId: 'meet_extend',
-    SubmitText: 'Extend',
-  }
-);
+
 
 /*
 // Fetch volume and print it
@@ -319,3 +349,30 @@ xapi.config.set('SystemUnit Name', 'My System');
 
 // De-register feedback
 //off();
+
+
+
+// ------------------------ MQTT connect
+
+var mqtt = require('mqtt');
+var client  = mqtt.connect('mqtt://192.168.1.128');
+
+client.on('connect', function () {
+    client.subscribe('LYS01-1-Egner/SensorBoards/Box1/eco2', function (err) {
+        if (!err) {
+        //client.publish('presence', 'Hello mqtt');
+        }
+    })
+})
+
+var co2 = 0;
+client.on('message', function (topic, message) {
+    // message is Buffer
+    co2 = parseInt(message.toString());
+    if (co2 > 1000) {
+        console.log("High CO2!!!");
+        xapi.command("UserInterface Message TextInput Display", { Text: "CO2 level is high, consider opening a window. CO2 level: " + co2, Duration:10 });
+    }
+    console.log(message.toString());
+    //client.end();
+})
