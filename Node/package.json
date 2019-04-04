@@ -9,7 +9,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "ddp": "^0.12.1",
     "express": "^4.16.4",
-    "jsxapi": "^4.2.0"
+    "jsxapi": "^4.2.0",
+    "moment-timezone": "^0.5.23",
+    "sha256": "^0.2.0"
   }
 }
