@@ -277,7 +277,29 @@ xapi.on('ready', () => {
 
 
 //xapi.command("UserInterface Message TextLine Display", { Text: "Do you want to extend the meeting?",  Duration:10, X:10, Y:10 });
+const off = xapi.event.on('UserInterface/Message/TextInput/Response', (event) => {
+  switch( event.FeedbackId) {
+  case 'meet_extend':
+    let extendTime = parseInt(event.Text);
+    extendTime = Math.min(extendTime, 10);
+    console.log('extend with ', extendTime);
+    break;
+  default:
+    // Ignore
+  }  
+});
 
+xapi.command("UserInterface Message TextInput Display", 
+  { 
+    Title: 'Meeting will end in 5 minutes',
+    Text: "Do you want to extend the meeting (max 10 minutes)?",
+    InputType: 'Numeric',
+    PlaceHolder: 'Number of minutes',
+    Duration: 60,
+    FeedbackId: 'meet_extend',
+    SubmitText: 'Extend',
+  }
+);
 
 /*
 // Fetch volume and print it
@@ -293,9 +315,7 @@ xapi.command('Dial', { Number: 'tomas.nielsen@certus.com.hk' });
 xapi.config.set('SystemUnit Name', 'My System');
 */
 // Listen to feedback
-const off = xapi.event.on('Standby', (event) => {
-  console.log(event);
-});
+
 
 // De-register feedback
 //off();
