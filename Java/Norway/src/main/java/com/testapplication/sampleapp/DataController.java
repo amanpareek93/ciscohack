@@ -1,29 +1,42 @@
 package com.testapplication.sampleapp;
 
 import java.net.URI;
+import java.util.List;
 
+import com.testapplication.sampleapp.model.SensorData;
+import com.testapplication.sampleapp.service.DataService;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
-
+import sun.nio.ch.sctp.SendFailed;
 
 
 @RestController
-public class HelloController {
+public class DataController {
 
-	@RequestMapping("/")
-	public String index() {
-		System.out.println("Got a call");
-		return "NEW MODIFIED HelloworldController";
+	@Autowired
+	private DataService dataService;
+
+
+	@GetMapping("/getDataByType")
+	public List<SensorData> getDataByType(@RequestParam String type) {
+		return  dataService.getDataByType(type);
+
 	}
+
+	//Todo tomas to correct request
+
+	@PostMapping("/devicedata")
+	public SensorData getDataByType(@RequestParam SensorData sensorData) {
+		return  dataService.save(sensorData);
+
+	}
+
 
 	@RequestMapping("/testdata")
 	public void getTestData() {
