@@ -126,7 +126,8 @@ app.use(bodyParser.json());
     app.route("/extendMeetingDialog") // Bring up extension dialog.
         .get(extendMeetingDialog);
 
-
+    app.route("/aboutToStart")
+        .get(meetingIsAboutToStart);
 
     app.route("/clear")
     .get(clear);
@@ -203,6 +204,42 @@ function bookMeeting(req, res) {
 
 // ---------------- xAPI
 
+function meetingIsAboutToStart(req, res) {
+    xapi.command("UserInterface Message Prompt Display",
+        {
+            Title: 'A meeting is about to start in this room',
+            Text: "Do you want to start the meeting now?",
+            Duration: 60,
+            FeedbackId: 'meet_start',
+            'Option.1': 'Yes start meeting',
+            'option.2': 'Cancel',
+            }
+        );
+    const big = xapi.event.on('UserInterface Message Prompt Response', (event) => {
+        switch (event.FeedbackId) {
+            case 'meet_start':
+            switch (event.OptionId) {
+                case '1':
+                axios.get("http://localhost:8092/startmeeting")
+                .then((res) => {
+                    console.log("Started meeting");
+                })
+                .catch((error) => {
+                    console.error(error)
+                });
+                break;
+                case '2':
+                // cancel do nothing
+                break;
+            }
+            //closeDialoges(board, screen);
+            break;
+            default:
+            // Ignore
+        }
+        });
+    res.json({ status: "Success" } );
+}
 
 function extendMeetingDialog(req, res) {
     //xapi.command("UserInterface Message TextInput Display", { Text: "Do you want to extend the meeting?" });
@@ -276,9 +313,21 @@ xapi.on('ready', () => {
                 roomPeopleCount = count.Current;
                 if(roomPeopleCount != -1) {
                     //axios.post("http://192.168.1.242:8092/devicedata", {
-                    axios.post("http://localhost:8092/devicedata", {
+                    //axios.post("http://localhost:8092/devicedata", {
+                    axios.post("http://preprodspacemanagement.smartenspaces.com:1827/devicedata", {
                         type: "peoplecount",
                         value: roomPeopleCount,
+                        "timestamp": Date.now(),
+                    })
+                    .then((res) => {
+                        //console.log(`statusCode: ${res.statusCode}`)
+                        //console.log(res)
+                    })
+                    .catch((error) => {
+                    //console.error(error)
+                    });
+                    axios.post("http://preprodspacemanagement.smartenspaces.com:1827/devicedata", {
+                        type: "co2",
                         "timestamp": Date.now(),
                         co2: co2,
                     })
@@ -287,7 +336,7 @@ xapi.on('ready', () => {
                         //console.log(res)
                     })
                     .catch((error) => {
-                    console.error(error)
+                    //console.error(error)
                     });
                 }
             });
@@ -404,7 +453,7 @@ function PresentExtender(board, screen) {
   return { big, small };
 }
 
-PresentExtender(xapi, xapiSmall);
+//PresentExtender(xapi, xapiSmall);
 
 /*
 // Fetch volume and print it
