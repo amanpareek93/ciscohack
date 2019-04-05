@@ -120,10 +120,10 @@ app.use(function(req, res, next) {
     app.route('/bookMeeting')
         .get(bookMeeting)
         .post(bookMeeting);
-
+/*
     app.route("/extendMeeting") // extend Liso meeting
         .get(extendMeeting);
-
+*/
     app.route("/extendMeetingDialog") // Bring up extension dialog.
         .get(extendMeetingDialog);
 
@@ -141,7 +141,7 @@ app.use(function(req, res, next) {
 */
 
 app.listen(port);
-
+/*
 function extendMeeting(req, res) {
     const updateEvent = {
         _id: req.query.id,
@@ -162,6 +162,7 @@ function extendMeeting(req, res) {
     });
 
 }
+*/
 
 var lastStartDate = null;
 var lastEndDate = null;
@@ -344,14 +345,14 @@ function extendMeeting(minutes) {
   const updateEvent = {
     _id: lastID,
     startDate: lastStartDate, //moment().format("YYYY-MM-DDTHH:mm:ssZ"),
-    endDate: moment(lastEndDate).add(minutes, "minutes")
+    endDate: moment(lastEndDate).add(minutes, "minutes").format("YYYY-MM-DDTHH:mm:ssZ")
   };
   console.log("extend meeting called");
   console.log(updateEvent);
   ddpclient.call('updateEvent', [ updateEvent ],
     function (err, result) {
       if (result) {
-        res.json( result );
+        console.log( result );
       } else {
         console.log(err);
       }
@@ -397,8 +398,8 @@ xapi.event.on('UserInterface Message Prompt Response', (event) => {
       }
       closeDialoges(xapi, xapiSmall);
       break;
-    
-      
+
+
     default:
     // Ignore
   }
@@ -417,11 +418,11 @@ function renewLightToken() {
       }
     }
   ).then((resp) => {
-    lightToken = resp.data.token;    
+    lightToken = resp.data.token;
   }).catch((err) => {
     console.error('failed', err);
   });
-  
+
   setTimeout(renewLightToken, 3500 * 1000);
 }
 
@@ -436,7 +437,7 @@ function setLight(value) {
     }
   };
   value = value.toFixed(0);
-  
+
   lights.forEach((light) => {
     let url = 'https://api.interact-lighting.com/interact/api/officeWiredOnPremise/control/2018roadshow1/applyLuminaireLevel/1004/'
     + light + '/' + value;
