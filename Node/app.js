@@ -107,9 +107,6 @@ ddpclient.connect(function(error, wasReconnect) {
     });
 });
 
-
-
-
 // ----------------------- Express
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -376,33 +373,101 @@ function handleMinuteChange(event, extendTime) {
   return extendTime;
 }
 
-function PresentExtender(board, screen) {
-  var extendTime = 15;
+var extendTime = 15;
 
-  const big = board.event.on('UserInterface Message Prompt Response', (event) => {
-    switch (event.FeedbackId) {
-      case 'meet_extend':
-        switch (event.OptionId) {
-          case '1':
-            extendMeeting(15);
-            break;
-          case '2':
-            extendMeeting(30);
-            break;
-          case '3':
-            // release meeting
-            console.log('release meeting');
-            break;
-          case '4':
-            // cancel do nothing
-            break;
-        }
-        closeDialoges(board, screen);
-        break;
-      default:
-      // Ignore
+xapi.event.on('UserInterface Message Prompt Response', (event) => {
+  switch (event.FeedbackId) {
+    case 'meet_extend':
+      switch (event.OptionId) {
+        case '1':
+          extendMeeting(15);
+          break;
+        case '2':
+          extendMeeting(30);
+          break;
+        case '3':
+          // release meeting
+          console.log('release meeting');
+          break;
+        case '4':
+          // cancel do nothing
+          break;
+      }
+      closeDialoges(xapi, xapiSmall);
+      break;
+    
+      
+    default:
+    // Ignore
+  }
+});
+
+var lightToken;
+
+function renewLightToken() {
+  axios.post(
+    'https://api.interact-lighting.com/oauth/accesstoken',
+    'app_key=gRhpONVKAGYvBsfwVyrROH1pWAAkkNuk&app_secret=c4XFB50DsCbNgJPP&service=officeWiredOnPremise',
+    {
+      headers: {
+        'authorization': 'Basic MjAxOHJvYWRzaG93MVxhcGl1c2VyOkNpc2NvaGFja2F0b24hMTIz',
+        'content-type': 'application/x-www-form-urlencoded',
+      }
     }
+  ).then((resp) => {
+    lightToken = resp.data.token;    
+  }).catch((err) => {
+    console.error('failed', err);
   });
+  
+  setTimeout(renewLightToken, 3500 * 1000);
+}
+
+renewLightToken();
+
+function setLight(value) {
+  let lights = [2, 3, 4, 5, 6, 7];
+  let  config = {
+    headers: {
+      'authorization': `Bearer ${lightToken}`,
+      'content-length': 0,
+    }
+  };
+  value = value.toFixed(0);
+  
+  lights.forEach((light) => {
+    let url = 'https://api.interact-lighting.com/interact/api/officeWiredOnPremise/control/2018roadshow1/applyLuminaireLevel/1004/'
+    + light + '/' + value;
+    axios.put(url, {}, config);
+  })
+}
+
+xapiSmall.event.on('UserInterface Extensions Widget Action', (event) => {
+  switch (event.WidgetId) {
+    case 'minute_set':
+      extendTime = handleMinuteChange(event, extendTime);
+      screen.command('UserInterface Extensions Widget SetValue',
+        { value: extendTime, widgetid: 'minute_set' });
+      break;
+    case 'extend':
+      if (event.Type === 'pressed') {
+        return;
+      }
+      if (event.Value === '2') {
+        extendMeeting(extendTime);
+      }
+      closeDialoges(xapi, xapiSmall);
+      break;
+    case 'light':
+      if (event.Type !== 'changed') {
+        return;
+      }
+      setLight(parseInt(event.Value) * 100 / 255);
+      break;
+  }
+});
+
+function PresentExtender(board, screen) {
   board.command('Standby Deactivate');
   board.command("UserInterface Message Prompt Display",
     {
@@ -417,32 +482,11 @@ function PresentExtender(board, screen) {
     }
   );
 
-
-  const small = screen.event.on('UserInterface Extensions Widget Action', (event) => {
-    switch (event.WidgetId) {
-      case 'minute_set':
-        extendTime = handleMinuteChange(event, extendTime);
-        screen.command('UserInterface Extensions Widget SetValue',
-          { value: extendTime, widgetid: 'minute_set' });
-        break;
-      case 'extend':
-        if (event.Type === 'pressed') {
-          return;
-        }
-        if (event.Value === '2') {
-          extendMeeting(extendTime);
-        }
-        closeDialoges(board, screen);
-        break;
-
-    }
-  });
   screen.command('Standby Deactivate');
   screen.command('UserInterface Extensions Panel Open',
     { panelid: 'extender_1' });
   screen.command('UserInterface Extensions Widget SetValue',
     { value: extendTime, widgetid: 'minute_set' });
-  return { big, small };
 }
 
 //PresentExtender(xapi, xapiSmall);
