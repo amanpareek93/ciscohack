@@ -479,20 +479,18 @@ xapiSmall.event.on('UserInterface Extensions Widget Action', (event) => {
         console.log('delete meeting');
         ddpclient.call('deleteEvent', [ { _id: lastID } ],(err, result) => {
           if (result) {
-            res.json( result );
             console.log(result);
           } else {
             console.log(err);
-            res.json(err);
           }
         });
-        
+
       })
       .catch((err) => {
         console.log('failed to set value', err);
       });
       xapiSmall.command('UserInterface Extensions Panel Close');
-      break;      
+      break;
   }
 });
 
