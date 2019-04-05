@@ -330,18 +330,6 @@ xapi.on('ready', () => {
                     .catch((error) => {
                     //console.error(error)
                     });
-                    axios.post("http://preprodspacemanagement.smartenspaces.com:1827/devicedata", {
-                        type: "co2",
-                        "timestamp": Date.now(),
-                        value: co2,
-                    })
-                    .then((res) => {
-                        //console.log(`statusCode: ${res.statusCode}`)
-                        //console.log(res)
-                    })
-                    .catch((error) => {
-                    //console.error(error)
-                    });
                 }
             });
 
@@ -501,6 +489,19 @@ client.on('message', function (topic, message) {
         console.log("High CO2!!!");
         xapi.command("UserInterface Message TextLine Display", { Text: "CO2 level is high, consider opening a window. CO2 level: " + co2, Duration:5, X:10, Y:200 });
     }
+    axios.post("http://preprodspacemanagement.smartenspaces.com:1827/devicedata", {
+        type: "co2",
+        "timestamp": Date.now(),
+        value: co2,
+    })
+    .then((res) => {
+        //console.log(`statusCode: ${res.statusCode}`)
+        //console.log(res)
+    })
+    .catch((error) => {
+    //console.error(error)
+    });
+
     console.log(message.toString());
     //client.end();
 })
