@@ -246,8 +246,10 @@ function meetingIsAboutToStart(req, res) {
 }
 
 function extendMeetingDialog(req, res) {
+    PresentExtender(xapi, xapiSmall);
+
     //xapi.command("UserInterface Message TextInput Display", { Text: "Do you want to extend the meeting?" });
-    xapi.command("UserInterface Message TextInput Display",
+/*    xapi.command("UserInterface Message TextInput Display",
     {
         Title: 'Meeting will end in 5 minutes',
         Text: "Do you want to extend the meeting (max 10 minutes)?",
@@ -257,7 +259,7 @@ function extendMeetingDialog(req, res) {
         FeedbackId: 'meet_extend',
         SubmitText: 'Extend',
     }
-    );
+    );*/
     res.json({ status: "Success" } );
 }
 
