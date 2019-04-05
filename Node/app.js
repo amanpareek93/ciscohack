@@ -133,6 +133,9 @@ app.use(function(req, res, next) {
     app.route("/clear")
     .get(clear);
 
+    app.route("/deleteMeeting")
+        .get(deleteMeeting);
+
 /*
   app.route('/tasks/:taskId')
     .get(todoList.read_a_task)
@@ -202,6 +205,16 @@ function bookMeeting(req, res) {
         });
 
 
+}
+
+function deleteMeeting() {
+    ddpclient.call('deleteEvent', [ { bookingId: lastID, pin: null, rfid: null, ongoing: true } ],(err, result) => {
+        if (result) {
+          console.log(result);
+        } else {
+          console.log(err);
+        }
+      });
 }
 
 // ---------------- xAPI
@@ -476,8 +489,8 @@ xapiSmall.event.on('UserInterface Extensions Widget Action', (event) => {
       xapiSmall.command('UserInterface Extensions Widget SetValue',
         { value: 'Released', widgetid: 'release_status' })
       .then((_) => {
-        console.log('delete meeting');
-        ddpclient.call('deleteEvent', [ { _id: lastID } ],(err, result) => {
+        console.log('delete meeting ', lastID);
+        ddpclient.call('deleteEvent', [ { bookingId: lastID, pin: null, rfid: null, ongoing: true } ],(err, result) => {
           if (result) {
             console.log(result);
           } else {
