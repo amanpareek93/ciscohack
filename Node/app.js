@@ -329,7 +329,7 @@ xapi.on('ready', () => {
                     axios.post("http://preprodspacemanagement.smartenspaces.com:1827/devicedata", {
                         type: "co2",
                         "timestamp": Date.now(),
-                        co2: co2,
+                        value: co2,
                     })
                     .then((res) => {
                         //console.log(`statusCode: ${res.statusCode}`)
