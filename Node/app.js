@@ -131,7 +131,7 @@ app.use(function(req, res, next) {
         .get(meetingIsAboutToStart);
 
     app.route("/clear")
-    .get(clear);
+        .get(clear);
 
     app.route("/deleteMeeting")
         .get(deleteMeeting);
@@ -207,7 +207,7 @@ function bookMeeting(req, res) {
 
 }
 
-function deleteMeeting() {
+function deleteMeeting(req, res) {
     ddpclient.call('deleteEvent', [ { bookingId: lastID, pin: null, rfid: null, ongoing: true } ],(err, result) => {
         if (result) {
           console.log(result);
