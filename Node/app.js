@@ -351,7 +351,28 @@ xapi.on('ready', () => {
             console.log(`Are you interacting with a RoomKit? exiting...`);
             xapi.close();
         });
+  xapi.feedback.on('/Status/RoomAnalytics/AmbientNoise/Level', (status) => {
+    let dBA = parseInt(status.dBA);
+    console.log('dba', dBA);
+    
+    axios.post("http://preprodspacemanagement.smartenspaces.com:1827/devicedata", {
+                        type: "sound",
+                        value: dBA,
+                        "timestamp": Date.now(),
+                    })
+                    .then((res) => {
+                        //console.log(`statusCode: ${res.statusCode}`)
+                        //console.log(res)
+                    })
+                    .catch((error) => {
+                    //console.error(error)
+                    });
+  });
+  
 });
+
+
+
 
 function extendMeeting(minutes) {
   const updateEvent = {
