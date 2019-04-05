@@ -234,7 +234,6 @@ function meetingIsAboutToStart(req, res) {
                 // cancel do nothing
                 break;
             }
-            //closeDialoges(board, screen);
             break;
             default:
             // Ignore
@@ -396,10 +395,6 @@ xapi.event.on('UserInterface Message Prompt Response', (event) => {
           extendMeeting(30);
           break;
         case '3':
-          // release meeting
-          console.log('release meeting');
-          break;
-        case '4':
           // cancel do nothing
           break;
       }
@@ -474,6 +469,30 @@ xapiSmall.event.on('UserInterface Extensions Widget Action', (event) => {
       }
       setLight(parseInt(event.Value) * 100 / 255);
       break;
+    case 'release':
+      if (event.Type !== 'clicked') {
+        return;
+      }
+      xapiSmall.command('UserInterface Extensions Widget SetValue',
+        { value: 'Released', widgetid: 'release_status' })
+      .then((_) => {
+        console.log('delete meeting');
+        ddpclient.call('deleteEvent', [ { _id: lastID } ],(err, result) => {
+          if (result) {
+            res.json( result );
+            console.log(result);
+          } else {
+            console.log(err);
+            res.json(err);
+          }
+        });
+        
+      })
+      .catch((err) => {
+        console.log('failed to set value', err);
+      });
+      xapiSmall.command('UserInterface Extensions Panel Close');
+      break;      
   }
 });
 
@@ -487,8 +506,7 @@ function PresentExtender(board, screen) {
       FeedbackId: 'meet_extend',
       'Option.1': '+15 minutes',
       'Option.2': '+30 minutes',
-      'Option.3': 'Release meeting',
-      'option.4': 'Cancel',
+      'option.3': 'Cancel',
     }
   );
 
