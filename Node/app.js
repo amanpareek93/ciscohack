@@ -358,6 +358,13 @@ function extendMeeting(minutes) {
       }
   });
   console.log('extend meeting ', minutes);
+  axios.get("http://preprodspacemanagement.smartenspaces.com:1826/addons/api/extendmeeting?minutes=" + minutes)
+    .then((res) => {
+        console.log("Started meeting");
+    })
+    .catch((error) => {
+        console.error(error)
+    });
 }
 
 function closeDialoges(board, screen) {
@@ -449,7 +456,7 @@ xapiSmall.event.on('UserInterface Extensions Widget Action', (event) => {
   switch (event.WidgetId) {
     case 'minute_set':
       extendTime = handleMinuteChange(event, extendTime);
-      screen.command('UserInterface Extensions Widget SetValue',
+      xapiSmall.command('UserInterface Extensions Widget SetValue',
         { value: extendTime, widgetid: 'minute_set' });
       break;
     case 'extend':
